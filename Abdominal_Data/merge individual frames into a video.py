@@ -3,46 +3,52 @@ import cv2
 import pydicom
 import numpy as np
 
-# DICOM 文件的根目录
-root_dir = 'Moving'  # 或者是 'G:/Moving'，取决于你的实际情况
+# Path to the root directory of DICOM files.
+# This could be 'Moving' or 'G:/Moving', depending on your specific setup.
+root_dir: str = 'Moving'
 
-# 视频输出设置
-fps = 24  # 帧率
-video_size = (256, 256)  # 根据你的DICOM图像尺寸进行修改
-video_output = 'output_video.avi'
+# Video output settings
+fps: int = 24  # Frame rate
+video_size: tuple[int, int] = (256, 256)  # Adjust based on the size of your DICOM images
+video_output: str = 'output_video.avi'
 
-# 初始化视频编写器
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-video_writer = cv2.VideoWriter(video_output, fourcc, fps, video_size)
+# Initialize the video writer
+# The four-character code used to specify the video codec. 'XVID' is one such codec.
+fourcc: int = cv2.VideoWriter_fourcc(*'XVID')
+# VideoWriter object that we'll use to write the video. Parameters include the output file name,
+# the codec, frames per second, and video size.
+video_writer: cv2.VideoWriter = cv2.VideoWriter(video_output, fourcc, fps, video_size)
 
-# 遍历 DICOM 文件
+# Iterate over the DICOM files
 for subfolder in sorted(os.listdir(root_dir)):
-    dicom_folder = os.path.join(root_dir, subfolder)
+    dicom_folder: str = os.path.join(root_dir, subfolder)
+    # Ensure we're processing directories only
     if not os.path.isdir(dicom_folder):
         continue
     for dicom_file in sorted(os.listdir(dicom_folder)):
-        # 只处理 .dcm 文件
+        # Process only .dcm files
         if not dicom_file.endswith('.dcm'):
             continue
 
-        dicom_path = os.path.join(dicom_folder, dicom_file)
-        dataset = pydicom.dcmread(dicom_path)
+        dicom_path: str = os.path.join(dicom_folder, dicom_file)
+        # Read the DICOM file
+        dataset: pydicom.dataset.FileDataset = pydicom.dcmread(dicom_path)
 
-        # 将 DICOM 图像转换成 8 位深度的灰度图像
-        image = dataset.pixel_array
+        # Convert the DICOM image to an 8-bit grayscale image
+        image: np.ndarray = dataset.pixel_array
         image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
         image = np.uint8(image)
 
-        # 转换为3通道灰度图像
+        # Convert to a 3-channel grayscale image to match the video writer's requirements
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-        # 调整图像大小以适应视频尺寸
-        image_resized = cv2.resize(image, video_size)
+        # Resize the image to fit the video size
+        image_resized: np.ndarray = cv2.resize(image, video_size)
 
-        # 将图像写入视频
+        # Write the image to the video
         video_writer.write(image_resized)
 
-# 释放视频编写器
+# Release the video writer
 video_writer.release()
 
-print("视频创建完成!")
+print("Video creation completed!")
